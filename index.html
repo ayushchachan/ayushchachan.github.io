@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Ayush Chachan — Portfolio</title>
+
+    <!-- Link external stylesheet -->
+    <link rel="stylesheet" href="assets/styles.css">
+
+    <!-- GSAP + ScrollTrigger (CDN). We load these in the head so main.js can rely on them immediately.
+       You can replace with local copies if you prefer. -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js" defer></script>
+
+    <!-- main.js loaded at end of body with defer as well (keeps parsing consistent) -->
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <div class="brand">Ayush Chachan</div>
+            <nav>
+                <a href="#projects">Projects</a>
+                <a href="#contact">Contact</a>
+            </nav>
+        </header>
+
+        <main>
+            <!-- HERO -->
+            <section class="hero">
+                <!-- Left: animated 3D "laptop" scene -->
+                <div class="panel scene" aria-hidden="true">
+                    <div class="laptop" id="laptop">
+                        <div class="lid" id="lid">
+                            <div class="screen" id="screen">Project Demo</div>
+                            <div class="gloss" aria-hidden="true"></div>
+                        </div>
+                        <div class="base">
+                            <div class="keyboard-bar"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right: info, CTAs, social icons -->
+                <aside class="panel about" aria-labelledby="hero-heading">
+                    <h1 id="hero-heading">Hi — I'm Ayush Chachan</h1>
+                    <p class="muted">I build web experiences with polished interactions. I like chess ♟️ and badminton
+                        🏸.</p>
+
+                    <div class="cta">
+                        <a class="btn" id="view-projects-btn" href="#projects" role="button"
+                            aria-label="View projects">View projects</a>
+                        <a class="btn" id="contact-me" href="#contact" role="button" aria-label="Contact me">Get in
+                            touch</a>
+                    </div>
+
+                    <div class="social" aria-label="Contact and social links">
+                        <a class="icon" id="linkedin" href="https://www.linkedin.com/" target="_blank"
+                            rel="noopener noreferrer" title="LinkedIn" aria-label="LinkedIn">
+                            <!-- LinkedIn SVG (kept simple) -->
+                            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                <path
+                                    d="M4.98 3.5C4.98 4.88071 3.88071 6 2.5 6C1.11929 6 0 4.88071 0 3.5C0 2.11929 1.11929 1 2.5 1C3.88071 1 4.98 2.11929 4.98 3.5Z"
+                                    transform="translate(3 4)" fill="#9aa6c3" />
+                                <rect x="2" y="8" width="3" height="9" rx="0.5" transform="translate(3 4)"
+                                    fill="#9aa6c3" />
+                                <path
+                                    d="M11 8C9.9 8 9 8.9 9 10V17H12V11.6C12 10.9 12.4 10 13.6 10C14.8 10 15 11.1 15 12V17H18V11C18 9 16.8 8 15 8C13.8 8 13 8.7 12.8 9.2"
+                                    transform="translate(3 4)" fill="#9aa6c3" />
+                            </svg>
+                        </a>
+
+                        <a class="icon" id="instagram" href="https://www.instagram.com/" target="_blank"
+                            rel="noopener noreferrer" title="Instagram" aria-label="Instagram">
+                            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                <rect x="3" y="3" width="18" height="18" rx="5" stroke="#9aa6c3" stroke-width="1.6" />
+                                <circle cx="12" cy="12" r="3" fill="#9aa6c3"></circle>
+                                <circle cx="17.5" cy="6.5" r="0.8" fill="#9aa6c3"></circle>
+                            </svg>
+                        </a>
+
+                        <a class="icon" id="email" href="mailto:your.email@example.com" title="Email"
+                            aria-label="Email">
+                            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                <path
+                                    d="M3 6.5L12 12.2L21 6.5V18C21 19.1046 20.1046 20 19 20H5C3.89543 20 3 19.1046 3 18V6.5Z"
+                                    stroke="#9aa6c3" stroke-width="1.2" />
+                                <path d="M21 6.5L12 12.2L3 6.5" stroke="#9aa6c3" stroke-width="1.2" />
+                            </svg>
+                        </a>
+
+                        <a class="icon" id="chess" href="https://www.chess.com/member/Ayushchachan" target="_blank"
+                            rel="noopener noreferrer" title="Chess.com: Ayushchachan" aria-label="Chess.com">
+                            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                <path d="M6 20H18" stroke="#9aa6c3" stroke-width="1.2" stroke-linecap="round" />
+                                <path d="M12 3L8 9.5H16L12 3Z" fill="#9aa6c3" />
+                                <path d="M9 12H15L13.5 16H10.5L9 12Z" fill="#9aa6c3" />
+                            </svg>
+                        </a>
+                    </div>
+                </aside>
+            </section>
+
+            <!-- PROJECTS SECTION (auto-syncs from GitHub public repos) -->
+            <section id="projects" class="projects">
+                <h2 style="margin:0">Projects</h2>
+                <p class="muted" style="margin:6px 0 0 0">Public GitHub repos (auto-sync). Add a new public repo and it
+                    will appear here.</p>
+
+                <div style="margin-top:12px;display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+                    <label class="muted" for="gh-username">GitHub username:</label>
+                    <input id="gh-username" class="input-username" value="Ayushchachan" />
+                    <button class="btn" id="refresh-repos">Refresh</button>
+                </div>
+
+                <div id="repos" class="grid" aria-live="polite" style="margin-top:12px"></div>
+            </section>
+
+            <!-- CONTACT -->
+            <section id="contact" style="margin-top:28px" class="panel">
+                <h2 style="margin:0">Contact</h2>
+                <p class="muted" style="margin-top:6px">Reach me on LinkedIn, Instagram, or email. I check messages
+                    frequently.</p>
+                <div style="margin-top:12px;display:flex;gap:12px;flex-wrap:wrap">
+                    <a class="btn" href="mailto:your.email@example.com">Email me</a>
+                    <a class="btn" href="https://www.linkedin.com/" target="_blank"
+                        rel="noopener noreferrer">LinkedIn</a>
+                    <a class="btn" href="https://www.instagram.com/" target="_blank"
+                        rel="noopener noreferrer">Instagram</a>
+                </div>
+            </section>
+
+            <footer>
+                <div class="muted">Built by Ayush Chachan • GitHub projects auto-sync</div>
+                <div class="muted">Preferences: respects <code>prefers-reduced-motion</code></div>
+            </footer>
+        </main>
+    </div>
+
+    <!-- Application script (deferred so GSAP loaded first) -->
+    <script src="assets/main.js" defer></script>
+</body>
+
+</html>
