@@ -18,61 +18,83 @@ const AUTO_REFRESH_INTERVAL_MS = 1000 * 60 * 2;
    Utility: safeFetchJSON
    ========================== */
 async function safeFetchJSON(url) {
-    try {
-        const res = await fetch(url, { cache: 'no-cache' });
-        if (!res.ok) throw new Error('Network response not ok: ' + res.status);
-        return await res.json();
-    } catch (err) {
-        console.error('Fetch error', err);
-        throw err;
-    }
+  try {
+    const res = await fetch(url, { cache: 'no-cache' });
+    if (!res.ok) throw new Error('Network response not ok: ' + res.status);
+    return await res.json();
+  } catch (err) {
+    console.error('Fetch error', err);
+    throw err;
+  }
 }
 
 /* ==========================
    GitHub repo fetch & render (unchanged logic)
    ========================== */
 async function fetchAndRenderRepos() {
-    const username = GITHUB_USERNAME;
-    const container = document.getElementById('repos');
-    container.innerHTML = '<div class="muted">Loading repos…</div>';
+  const username = GITHUB_USERNAME;
+  const container = document.getElementById('repos');
 
-    try {
-        const api = `https://api.github.com/users/${encodeURIComponent(username)}/repos?per_page=100&sort=updated`;
-        const data = await safeFetchJSON(api);
+  // 1. Check for local file protocol usage (common reason for "not syncing")
+  if (window.location.protocol === 'file:') {
+    container.innerHTML = `
+            <div class="card" style="border-color:rgba(255,200,80,0.3); background:rgba(255,200,80,0.05)">
+                <h3 style="color:#ffdb80">⚠️ Local File Mode Detected</h3>
+                <p class="muted">
+                    Browsers block API calls from <code>file://</code> URLs for security. 
+                    Your repos cannot be synced here.<br><br>
+                    To see them, please run a local server:<br>
+                    <code>npx http-server</code> or <code>python3 -m http.server</code>
+                </p>
+            </div>`;
+    return;
+  }
 
-        if (!Array.isArray(data)) {
-            container.innerHTML = '<div class="muted">No repos found or API error.</div>';
-            console.warn('Unexpected data from GitHub API', data);
-            return;
-        }
+  container.innerHTML = '<div class="muted">Loading repos…</div>';
 
-        const repos = data.filter(r => !r.fork);
-        if (repos.length === 0) {
-            container.innerHTML = '<div class="muted">No public repositories (or only forks).</div>';
-            return;
-        }
+  try {
+    const api = `https://api.github.com/users/${encodeURIComponent(username)}/repos?per_page=100&sort=updated`;
+    const data = await safeFetchJSON(api);
 
-        container.innerHTML = '';
-        repos.forEach(repo => {
-            const card = document.createElement('article');
-            card.className = 'card';
-            card.innerHTML = `
+    if (!Array.isArray(data)) {
+      // Check for API rate limit message or other object response
+      if (data.message && data.message.includes('API rate limit')) {
+        container.innerHTML = '<div class="muted">GitHub API rate limit exceeded. Try again later.</div>';
+        return;
+      }
+      container.innerHTML = '<div class="muted">Unexpected response from GitHub.</div>';
+      console.warn('Unexpected data:', data);
+      return;
+    }
+
+    const repos = data.filter(r => !r.fork);
+    if (repos.length === 0) {
+      container.innerHTML = '<div class="muted">No public repositories found (forks hidden).</div>';
+      return;
+    }
+
+    container.innerHTML = '';
+    repos.forEach(repo => {
+      const card = document.createElement('article');
+      card.className = 'card';
+      card.innerHTML = `
         <h3><a href="${repo.html_url}" target="_blank" rel="noopener noreferrer" style="color:inherit;text-decoration:none">${escapeHtml(repo.name)}</a></h3>
         <p class="muted">${escapeHtml(repo.description || 'No description')}</p>
         <p class="muted" style="margin-top:8px;font-size:12px">Updated ${new Date(repo.updated_at).toLocaleString()}</p>
       `;
-            container.appendChild(card);
-        });
-    } catch (err) {
-        container.innerHTML = '<div class="muted">Failed to load repos. Check console for details.</div>';
-    }
+      container.appendChild(card);
+    });
+  } catch (err) {
+    console.error(err);
+    container.innerHTML = '<div class="muted">Failed to load repos. (Check console)</div>';
+  }
 }
 
 function escapeHtml(s) {
-    if (!s) return '';
-    return String(s).replace(/[&<>"']/g, function (m) {
-        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": "&#39;" }[m];
-    });
+  if (!s) return '';
+  return String(s).replace(/[&<>"']/g, function (m) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": "&#39;" }[m];
+  });
 }
 
 /* ==========================
@@ -83,211 +105,193 @@ function escapeHtml(s) {
    - Respects prefers-reduced-motion: if set, the animation shows a static glow.
    ========================== */
 function initDbzCanvas() {
-    const canvas = document.getElementById('dbz-canvas');
-    if (!canvas) return;
+  const canvas = document.getElementById('dbz-canvas');
+  if (!canvas) return;
 
-    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const ctx = canvas.getContext('2d');
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  // Mobile check: reduce complexity if screen is narrow
+  const isMobile = window.innerWidth < 600;
 
-    // sizing helper: make canvas match CSS size (pixel ratio aware)
-    function resize() {
-        const rect = canvas.getBoundingClientRect();
-        const dpr = window.devicePixelRatio || 1;
-        canvas.width = Math.round(rect.width * dpr);
-        canvas.height = Math.round(rect.height * dpr);
-        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    }
-    resize();
-    window.addEventListener('resize', resize);
+  const ctx = canvas.getContext('2d');
+  let animationFrameId; // to track and cancel loop
 
-    // Central energy orb position (center of canvas)
-    let w = canvas.width, h = canvas.height;
-    function dims() { w = canvas.width / (window.devicePixelRatio || 1); h = canvas.height / (window.devicePixelRatio || 1); }
+  function resize() {
+    const rect = canvas.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = Math.round(rect.width * dpr);
+    canvas.height = Math.round(rect.height * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  let w = canvas.width, h = canvas.height;
+  function dims() { w = canvas.width / (window.devicePixelRatio || 1); h = canvas.height / (window.devicePixelRatio || 1); }
+  dims();
+
+  // Reduce particles on mobile for performance
+  const particles = [];
+  const maxParticles = isMobile ? 35 : 80;
+
+  const rings = [];
+  let last = performance.now();
+
+  function rand(min, max) { return Math.random() * (max - min) + min; }
+
+  function spawnParticle() {
+    if (particles.length >= maxParticles) return;
+    const px = w / 2, py = h / 2;
+    const angle = rand(0, Math.PI * 2);
+    const speed = rand(0.6, 3.2);
+    const life = rand(600, 1600);
+    const size = rand(1, 4);
+    particles.push({
+      x: px, y: py,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
+      life, age: 0, size,
+      hue: rand(30, 60)
+    });
+  }
+
+  function spawnRing() {
+    rings.push({
+      age: 0, life: 1200,
+      maxR: Math.min(w, h) * 0.6,
+      hue: rand(200, 260),
+    });
+  }
+
+  function orbConfig() {
+    const radius = Math.min(w, h) * 0.16;
+    const coreColor = { r: 255, g: 222, b: 85 };
+    const outerColor = { r: 120, g: 190, b: 255 };
+    return { radius, coreColor, outerColor };
+  }
+
+  function draw(t) {
+    const dt = t - last;
+    last = t;
     dims();
 
-    // Particle system for sparks that orbit/fly off the orb
-    const particles = [];
-    const maxParticles = 80;
+    ctx.clearRect(0, 0, w, h);
+    const bgGrad = ctx.createLinearGradient(0, 0, 0, h);
+    bgGrad.addColorStop(0, 'rgba(2,6,20,0.8)');
+    bgGrad.addColorStop(1, 'rgba(0,0,0,0.85)');
+    ctx.fillStyle = bgGrad;
+    ctx.fillRect(0, 0, w, h);
 
-    // Shockwave rings for the pulsing effect
-    const rings = [];
+    const cfg = orbConfig();
+    const cx = w / 2, cy = h / 2;
+    const pulse = 0.9 + 0.12 * Math.sin(t / 250);
 
-    // Time tracking
-    let last = performance.now();
-
-    // Utility random helpers
-    function rand(min, max) { return Math.random() * (max - min) + min; }
-    function rgba(r, g, b, a) { return `rgba(${r},${g},${b},${a})`; }
-
-    // Create initial particle burst
-    function spawnParticle() {
-        if (particles.length >= maxParticles) return;
-        const px = w / 2, py = h / 2;
-        const angle = rand(0, Math.PI * 2);
-        const speed = rand(0.6, 3.2);
-        const life = rand(600, 1600); // ms
-        const size = rand(1, 4);
-        particles.push({
-            x: px,
-            y: py,
-            vx: Math.cos(angle) * speed,
-            vy: Math.sin(angle) * speed,
-            life,
-            age: 0,
-            size,
-            hue: rand(30, 60) // warm yellow/orange-ish sparks
-        });
-    }
-
-    // Add a pulsing ring
-    function spawnRing() {
-        rings.push({
-            age: 0,
-            life: 1200,
-            maxR: Math.min(w, h) * 0.6,
-            hue: rand(200, 260), // bluish/purple ring
-        });
-    }
-
-    // Orb configuration (colors and radius)
-    function orbConfig() {
-        const radius = Math.min(w, h) * 0.16; // relative radius
-        const coreColor = { r: 255, g: 222, b: 85 }; // warm inner core
-        const outerColor = { r: 120, g: 190, b: 255 }; // electric outer tint
-        return { radius, coreColor, outerColor };
-    }
-
-    // Main draw loop
-    function draw(t) {
-        const dt = t - last;
-        last = t;
-        dims();
-
-        // Clear with a subtle radial background so orb pops
-        ctx.clearRect(0, 0, w, h);
-        // very subtle vignette
-        const bgGrad = ctx.createLinearGradient(0, 0, 0, h);
-        bgGrad.addColorStop(0, 'rgba(2,6,20,0.8)');
-        bgGrad.addColorStop(1, 'rgba(0,0,0,0.85)');
-        ctx.fillStyle = bgGrad;
-        ctx.fillRect(0, 0, w, h);
-
-        const cfg = orbConfig();
-        const cx = w / 2, cy = h / 2;
-
-        // pulsing scale parameter (sin-based) to make the orb breathe
-        const pulse = 0.9 + 0.12 * Math.sin(t / 250);
-
-        // Draw outer glow (radial gradient)
-        const glow = ctx.createRadialGradient(cx, cy, cfg.radius * 0.1, cx, cy, cfg.radius * 2.6);
-        glow.addColorStop(0, `rgba(${cfg.coreColor.r},${cfg.coreColor.g},${cfg.coreColor.b},0.95)`);
-        glow.addColorStop(0.45, `rgba(${cfg.coreColor.r},${cfg.coreColor.g},${cfg.coreColor.b},0.18)`);
-        glow.addColorStop(0.8, `rgba(${cfg.outerColor.r},${cfg.outerColor.g},${cfg.outerColor.b},0.06)`);
-        glow.addColorStop(1, 'rgba(0,0,0,0)');
-        ctx.globalCompositeOperation = 'lighter';
-        ctx.fillStyle = glow;
-        ctx.beginPath();
-        ctx.arc(cx, cy, cfg.radius * 2.6 * pulse, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Inner noisy core (use many small arcs for texture)
-        for (let i = 0; i < 18; i++) {
-            const a = (i / 18) * Math.PI * 2 + (t / 900) * (i % 2 ? 1 : -1) * 0.12;
-            const r = cfg.radius * (0.32 + Math.sin(i * 1.3 + t / 300) * 0.08) * pulse;
-            ctx.beginPath();
-            ctx.fillStyle = `rgba(${cfg.coreColor.r + rand(-10, 10)},${cfg.coreColor.g + rand(-10, 10)},${cfg.coreColor.b},${0.06 + Math.random() * 0.12})`;
-            ctx.arc(cx + Math.cos(a) * r * 0.8, cy + Math.sin(a) * r * 0.6, cfg.radius * 0.7 * (0.05 + Math.random() * 0.08), 0, Math.PI * 2);
-            ctx.fill();
-        }
-
-        // Bright core
-        const coreGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, cfg.radius * 1.1);
-        coreGrad.addColorStop(0, `rgba(${cfg.coreColor.r},${cfg.coreColor.g},${cfg.coreColor.b},1)`);
-        coreGrad.addColorStop(0.5, `rgba(${cfg.coreColor.r},${cfg.coreColor.g},${cfg.coreColor.b},0.6)`);
-        coreGrad.addColorStop(1, `rgba(${cfg.outerColor.r},${cfg.outerColor.g},${cfg.outerColor.b},0.06)`);
-        ctx.fillStyle = coreGrad;
-        ctx.beginPath();
-        ctx.arc(cx, cy, cfg.radius * 1.02 * pulse, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Shockwave rings
-        for (let i = rings.length - 1; i >= 0; i--) {
-            const ring = rings[i];
-            ring.age += dt;
-            const progress = ring.age / ring.life;
-            if (progress >= 1) { rings.splice(i, 1); continue; }
-            const r = cfg.radius * (1 + progress * 6);
-            ctx.beginPath();
-            ctx.lineWidth = 1.2 * (1 - progress);
-            ctx.strokeStyle = `rgba(120,180,255,${0.28 * (1 - progress)})`;
-            ctx.arc(cx, cy, r * pulse, 0, Math.PI * 2);
-            ctx.stroke();
-        }
-
-        // Update particles
-        for (let i = particles.length - 1; i >= 0; i--) {
-            const p = particles[i];
-            p.age += dt;
-            if (p.age >= p.life) { particles.splice(i, 1); continue; }
-            // simple movement with slight noise
-            p.x += p.vx * (dt / 16) + Math.sin((p.age + i * 13) / 120) * 0.2;
-            p.y += p.vy * (dt / 16) + Math.cos((p.age + i * 7) / 90) * 0.2;
-            const fade = 1 - p.age / p.life;
-
-            ctx.beginPath();
-            ctx.fillStyle = `rgba(${200 + Math.round((p.hue % 60)), ${ 160 + Math.round((p.hue % 40)) }, ${ 40 + Math.round((p.hue % 30)) }, ${ 0.7 * fade })`;
-      ctx.arc(p.x, p.y, p.size * (0.6 + (1 - fade)), 0, Math.PI*2);
-      ctx.fill();
-    }
-
-    // occasional random micro-sparks
-    if (Math.random() < 0.12) spawnParticle();
-
-    // periodic ring spawn synced to time
-    if (Math.floor(t / 700) % 2 === 0 && Math.random() < 0.02) {
-      spawnRing();
-    }
-
-    // subtle static electric arcs (decorative)
-    ctx.globalCompositeOperation = 'source-over';
+    // Glow
+    const glow = ctx.createRadialGradient(cx, cy, cfg.radius * 0.1, cx, cy, cfg.radius * 2.6);
+    glow.addColorStop(0, `rgba(${cfg.coreColor.r},${cfg.coreColor.g},${cfg.coreColor.b},0.95)`);
+    glow.addColorStop(0.45, `rgba(${cfg.coreColor.r},${cfg.coreColor.g},${cfg.coreColor.b},0.18)`);
+    glow.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.fillStyle = glow;
     ctx.beginPath();
-    for (let s = 0; s < 3; s++) {
-      const startAngle = (t/800 + s*1.2) % (Math.PI*2);
-      const x1 = cx + Math.cos(startAngle) * cfg.radius * (1.6 + s*0.1);
-      const y1 = cy + Math.sin(startAngle) * cfg.radius * (1.6 + s*0.1);
-      const x2 = cx + Math.cos(startAngle + 0.6) * cfg.radius * (2.2 + s*0.15);
-      const y2 = cy + Math.sin(startAngle + 0.6) * cfg.radius * (2.2 + s*0.15);
-      ctx.strokeStyle = `rgba(160, 220, 255, ${ 0.06 + 0.12 * Math.random() })`;
-      ctx.lineWidth = 1;
-      ctx.moveTo(x1, y1);
-      ctx.quadraticCurveTo(cx, cy, x2, y2);
+    ctx.arc(cx, cy, cfg.radius * 2.6 * pulse, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Core Noise (Skip on mobile to save cycles)
+    if (!isMobile) {
+      for (let i = 0; i < 12; i++) {
+        const a = (i / 12) * Math.PI * 2 + (t / 900) * (i % 2 ? 1 : -1) * 0.12;
+        const r = cfg.radius * (0.32 + Math.sin(i * 1.3 + t / 300) * 0.08) * pulse;
+        ctx.beginPath();
+        ctx.fillStyle = `rgba(${cfg.coreColor.r},${cfg.coreColor.g},${cfg.coreColor.b},0.1)`;
+        ctx.arc(cx + Math.cos(a) * r * 0.8, cy + Math.sin(a) * r * 0.6, cfg.radius * 0.5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    // Solid Core
+    const coreGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, cfg.radius * 1.1);
+    coreGrad.addColorStop(0, `rgba(${cfg.coreColor.r},${cfg.coreColor.g},${cfg.coreColor.b},1)`);
+    coreGrad.addColorStop(1, `rgba(${cfg.outerColor.r},${cfg.outerColor.g},${cfg.outerColor.b},0)`);
+    ctx.fillStyle = coreGrad;
+    ctx.beginPath();
+    ctx.arc(cx, cy, cfg.radius * 1.02 * pulse, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Rings
+    for (let i = rings.length - 1; i >= 0; i--) {
+      const ring = rings[i];
+      ring.age += dt;
+      const progress = ring.age / ring.life;
+      if (progress >= 1) { rings.splice(i, 1); continue; }
+      const r = cfg.radius * (1 + progress * 6);
+      ctx.beginPath();
+      ctx.lineWidth = 1.2 * (1 - progress);
+      ctx.strokeStyle = `rgba(120,180,255,${0.28 * (1 - progress)})`;
+      ctx.arc(cx, cy, r * pulse, 0, Math.PI * 2);
       ctx.stroke();
     }
 
-    // reset composite mode
+    // Particles
+    for (let i = particles.length - 1; i >= 0; i--) {
+      const p = particles[i];
+      p.age += dt;
+      if (p.age >= p.life) { particles.splice(i, 1); continue; }
+      p.x += p.vx * (dt / 16);
+      p.y += p.vy * (dt / 16);
+      const fade = 1 - p.age / p.life;
+      ctx.beginPath();
+      ctx.fillStyle = `rgba(255, 200, 50, ${0.7 * fade})`;
+      ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    if (Math.random() < 0.12) spawnParticle();
+    if (Math.floor(t / 700) % 2 === 0 && Math.random() < 0.02) spawnRing();
+
+    // Decorative arcs (skip on mobile)
+    if (!isMobile) {
+      ctx.globalCompositeOperation = 'source-over';
+      ctx.beginPath();
+      for (let s = 0; s < 2; s++) {
+        const startAngle = (t / 800 + s * 1.2) % (Math.PI * 2);
+        ctx.strokeStyle = `rgba(160, 220, 255, 0.1)`;
+        ctx.arc(cx, cy, cfg.radius * (1.6 + s * 0.1), startAngle, startAngle + 1);
+        ctx.stroke();
+      }
+    }
     ctx.globalCompositeOperation = 'source-over';
 
-    // If reduced motion, draw a simpler static orb and stop animating further
-    if (reduceMotion) {
-      // static glow drawn above is enough; do not request animation frames repeatedly
-      return;
+    if (!reduceMotion) {
+      animationFrameId = requestAnimationFrame(draw);
     }
-    // loop
-    requestAnimationFrame(draw);
-  } // end draw()
+  }
 
-  // initialize: spawn an initial set of particles and rings
-  for (let i = 0; i < 36; i++) spawnParticle();
-  spawnRing();
+  // Init
+  for (let i = 0; i < (isMobile ? 15 : 36); i++) spawnParticle();
   spawnRing();
 
-  // start the animation
-  requestAnimationFrame(draw);
-
-  // Expose a simple pulse trigger (used optionally by other code)
-  return {
-    triggerPulse: () => spawnRing()
-  };
+  // PERFORMANCE: IntersectionObserver to pause loop when off-screen
+  if ('IntersectionObserver' in window) {
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          if (!animationFrameId && !reduceMotion) {
+            last = performance.now();
+            animationFrameId = requestAnimationFrame(draw);
+          }
+        } else {
+          if (animationFrameId) {
+            cancelAnimationFrame(animationFrameId);
+            animationFrameId = null;
+          }
+        }
+      });
+    }, { threshold: 0 });
+    observer.observe(canvas);
+  } else {
+    // Fallback for no observer support
+    if (!reduceMotion) requestAnimationFrame(draw);
+  }
 }
 
 /* ==========================
@@ -354,12 +358,32 @@ function initSocialInteractions() {
   });
 }
 
+// New: GSAP Entrance Animation for Social Icons
+function initContactAnimation() {
+  if (typeof gsap === 'undefined' || typeof ScrollTrigger === 'undefined') return;
+
+  // Animate the icons when #contact comes into view
+  gsap.from('.social .icon', {
+    scrollTrigger: {
+      trigger: '#contact',
+      start: 'top 80%', // when contact section top hits 80% viewport height
+      toggleActions: 'play none none reverse'
+    },
+    y: 30,
+    opacity: 0,
+    duration: 0.6,
+    stagger: 0.1, // distinct delay between each icon
+    ease: 'back.out(1.7)'
+  });
+}
+
 /* ==========================
    Wiring: on DOMContentLoaded
    - initialize animations, repos, canvas, and auto-refresh
    ========================== */
 document.addEventListener('DOMContentLoaded', () => {
   initHeroAnimation();
+  initContactAnimation(); // <-- Added entrance animation
   initSocialInteractions();
 
   // initialize canvas animation
