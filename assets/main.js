@@ -186,7 +186,7 @@ document.addEventListener('DOMContentLoaded', () => {
             alert('Please enter a GitHub username.');
             return;
         }
-        GITHUB_USERNAME = username;
+        GITHUB_USERNAME = ayushchachan;
         fetchAndRenderRepos(username);
     });
 
