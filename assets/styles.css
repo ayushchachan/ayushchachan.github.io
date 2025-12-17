@@ -305,13 +305,14 @@ footer p {
 
 
 .quote-container img {
-  width: 180px;
-  height: auto;
-  object-fit: contain;
-  border-radius: 8px;          /* subtle, not circular */
-  background: transparent;
-  filter: grayscale(100%);
-  opacity: 0.95;
+    width: 180px;
+    height: auto;
+    object-fit: contain;
+    border-radius: 8px;
+    /* subtle, not circular */
+    background: transparent;
+    filter: grayscale(100%);
+    opacity: 0.95;
 }
 
 
@@ -337,5 +338,11 @@ footer p {
     .quote-container {
         flex-direction: column;
         text-align: center;
+    }
+
+    .quote-container img {
+        width: 120px;
+        /* smaller on mobile */
+        margin-bottom: 16px;
     }
 }
