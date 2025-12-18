@@ -5,40 +5,37 @@ console.log("Main JS loaded");
 // ================= INTRO TYPING ANIMATION =================
 // ================= INTRO TYPING ANIMATION =================
 
-document.addEventListener("DOMContentLoaded", () => {
-  const line1Text = "Hello, I’m Ayush Chachan.";
-  const line2Text = "I’m a software engineer, graduated from IIT Delhi.";
+const line1Text = "Hi, I’m Ayush Chachan.";
+const line2Text = "A graduate from IIT Delhi - welcome to my personal website.";
 
-  const line1 = document.getElementById("intro-line-1");
-  const line2 = document.getElementById("intro-line-2");
+const line1 = document.getElementById("intro-line-1");
+const line2 = document.getElementById("intro-line-2");
 
-  const cursor1 = document.getElementById("cursor-1");
-  const cursor2 = document.getElementById("cursor-2");
+const cursor1 = document.getElementById("cursor-1");
+const cursor2 = document.getElementById("cursor-2");
 
-  let i = 0;
-  let j = 0;
-  const speed = 80;
+let i = 0;
+let j = 0;
+const speed = 80;
 
-  function typeLine1() {
-    if (i < line1Text.length) {
-      line1.textContent += line1Text.charAt(i);
-      i++;
-      setTimeout(typeLine1, speed);
-    } else {
-      cursor1.classList.add("hidden");
-      cursor2.classList.remove("hidden");
-      setTimeout(typeLine2, 300);
-    }
+function typeLine1() {
+  if (i < line1Text.length) {
+    line1.textContent += line1Text.charAt(i);
+    i++;
+    setTimeout(typeLine1, speed);
+  } else {
+    cursor1.classList.add("hidden");
+    cursor2.classList.remove("hidden");
+    setTimeout(typeLine2, 300);
   }
+}
 
-  function typeLine2() {
-    if (j < line2Text.length) {
-      line2.textContent += line2Text.charAt(j);
-      j++;
-      setTimeout(typeLine2, speed);
-    }
+function typeLine2() {
+  if (j < line2Text.length) {
+    line2.textContent += line2Text.charAt(j);
+    j++;
+    setTimeout(typeLine2, speed);
   }
+}
 
-  typeLine1();
-});
-
+typeLine1();
