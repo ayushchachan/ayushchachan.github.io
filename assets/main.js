@@ -6,7 +6,7 @@ console.log("Main JS loaded");
 // ================= INTRO TYPING ANIMATION =================
 
 const line1Text = "Hi, I’m Ayush Chachan.";
-const line2Text = "A graduate from IIT Delhi - welcome to my personal website.";
+const line2Text = "Welcome to my personal space on the web.";
 
 const line1 = document.getElementById("intro-line-1");
 const line2 = document.getElementById("intro-line-2");
