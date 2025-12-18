@@ -70,14 +70,55 @@ footer {
     background: linear-gradient(135deg, #eef2ff, #f0fdfa);
 }
 
+/* ================= TYPING INTRO ================= */
+
+.intro-text {
+    position: relative;
+}
+
+.cursor {
+  display: inline-block;
+  margin-left: 4px;
+  animation: blink 1s infinite;
+}
+
+.cursor.hidden {
+  display: none;
+}
+
+
+@keyframes blink {
+
+    0%,
+    50%,
+    100% {
+        opacity: 1;
+    }
+
+    25%,
+    75% {
+        opacity: 0;
+    }
+}
+
+
+/* ================= HERO LEFT (VIDEO + DESCRIPTION) ================= */
+
+.hero-left {
+    flex: 1;
+    max-width: 560px;
+    display: flex;
+    flex-direction: column;
+    margin-left: 40px;
+}
+
+
+/* Video stays as-is */
 .hero-visual {
-    flex: 0.85;
-    /* makes it slightly narrower */
-    height: 420px;
-    /* makes it taller */
-    border-radius: 18px;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    border-radius: 20px;
     overflow: hidden;
-    background: #000;
 }
 
 
@@ -88,8 +129,41 @@ footer {
 }
 
 .hero-content {
-    flex: 1;
+    flex: 1.1;
 }
+
+
+
+
+/* Description below video */
+.featured-project {
+    margin-top: 16px;
+}
+
+.featured-project h3 {
+    font-size: 20px;
+    margin-bottom: 8px;
+    color: var(--text-main);
+}
+
+.featured-project p {
+    font-size: 15px;
+    color: var(--text-muted);
+    line-height: 1.5;
+    margin-bottom: 10px;
+}
+
+.featured-project a {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--primary);
+    text-decoration: none;
+}
+
+.featured-project a:hover {
+    text-decoration: underline;
+}
+
 
 #home h1 {
     font-size: 52px;
@@ -107,6 +181,8 @@ footer {
     color: var(--text-muted);
     margin-bottom: 28px;
 }
+
+
 
 /* ================= SOCIAL ICONS ================= */
 
@@ -271,6 +347,11 @@ footer p {
     section,
     footer {
         padding: 80px 24px;
+    }
+
+    .hero-left {
+        align-items: center;
+        text-align: center;
     }
 
     #home {
