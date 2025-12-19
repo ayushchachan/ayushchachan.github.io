@@ -39,3 +39,17 @@ function typeLine2() {
 }
 
 typeLine1();
+
+// About section reveal
+const aboutSection = document.querySelector(".about-container");
+
+const observer = new IntersectionObserver(
+  ([entry]) => {
+    if (entry.isIntersecting) {
+      aboutSection.classList.add("visible");
+    }
+  },
+  { threshold: 0.2 }
+);
+
+observer.observe(aboutSection);

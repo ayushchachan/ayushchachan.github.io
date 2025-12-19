@@ -1,0 +1,11 @@
+I am a software engineer with a Dual Degree (B.Tech + M.Tech) in Biochemical Engineering from IIT Delhi. During my undergraduate studies, I developed a strong interest in discrete mathematics, algorithms, and problem solving, which gradually drew me toward programming and software development.
+
+I started my professional journey as a Software Engineer at Helloverify, where I worked primarily on backend development using Python and the Django framework. I independently designed and implemented REST APIs, automated manual verification processes using Selenium, integrated multiple third-party services, and implemented asynchronous schedulers using Celery. I also handled the backend and frontend for internal tools, building complete end-to-end features and focusing on reliability and maintainability for large-scale verification workflows.
+
+After my industry experience, I spent time preparing for the UPSC Civil Services Examination, with Mathematics as my optional subject. This period involved sustained self-study and problem-solving across topics such as algebra, calculus, and applied mathematics. The experience strengthened my ability to work through complex problems systematically and maintain focus over long periods — skills that I now apply to software engineering and systems-oriented work.
+
+As part of my academic work, my M.Tech project focused on statistical modeling and data validation, where I designed algorithms to analyze and verify experimental data using regression, error propagation, and consistency checks. This work was awarded the IIT Delhi BOSS Award for the best M.Tech project.
+
+Currently, I am focused on deepening my expertise in backend and systems engineering, with particular interest in operating systems, concurrency, and low-level system behavior. I enjoy working at the intersection of algorithms, system design, and real-world engineering constraints, and I value building software that is correct, maintainable, and grounded in strong fundamentals.
+
+This website documents my projects, experiments, and ongoing learning as I continue to strengthen my understanding of computer systems and backend engineering.

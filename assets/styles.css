@@ -202,23 +202,123 @@ footer {
     color: var(--primary);
 }
 
-/* ================= ABOUT ================= */
+
+/* ================= ABOUT ME ================= */
 
 #about {
     background: #f1f5f9;
 }
 
+.about-wrapper {
+    max-width: 1100px;
+    margin: 0 auto;
+}
+
 #about h2 {
     font-size: 36px;
     color: var(--primary);
-    margin-bottom: 16px;
+    margin-bottom: 40px;
 }
 
-#about p {
-    max-width: 720px;
-    font-size: 18px;
-    color: var(--text-muted);
+/* Two-column layout under heading */
+.about-container {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: 60px;
+    align-items: start;
+
+    /* Reveal animation */
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
 }
+
+.about-container.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+
+/* Image */
+.about-image img {
+    width: 100%;
+    border-radius: 16px;
+    object-fit: cover;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+}
+
+/* Text */
+/* Intro line under heading */
+.about-intro {
+    max-width: 700px;
+    font-size: 18px;
+    color: var(--text-main);
+    margin-bottom: 40px;
+}
+
+/* Paragraph polish */
+.about-content p {
+    font-size: 17px;
+    line-height: 1.8;
+    color: var(--text-muted);
+    margin-bottom: 26px;
+    /* more breathing space */
+
+    padding-left: 16px;
+    border-left: 2px solid transparent;
+}
+
+/* First paragraph slightly stronger */
+.about-content p:first-child {
+    font-size: 18px;
+    color: var(--text-main);
+}
+
+/* Highlight key paragraphs */
+.about-content p:nth-child(2),
+.about-content p:nth-child(4),
+.about-content p:nth-child(6) {
+    border-left: 2px solid var(--secondary);
+}
+
+
+.about-content strong {
+    color: var(--text-main);
+    font-weight: 600;
+}
+
+.about-image img {
+    width: 100%;
+    border-radius: 16px;
+    object-fit: cover;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
+}
+
+/* Add a caption-like feel */
+.about-image::after {
+    content: "Ayush Chachan";
+    display: block;
+    margin-top: 12px;
+    font-size: 14px;
+    color: var(--text-muted);
+    text-align: center;
+}
+
+
+/* ================= RESPONSIVE ================= */
+
+@media (max-width: 900px) {
+    .about-container {
+        grid-template-columns: 1fr;
+        gap: 32px;
+    }
+
+    .about-image {
+        max-width: 220px;
+        margin: 0 auto;
+    }
+}
+
 
 /* ================= PROJECTS ================= */
 
