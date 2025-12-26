@@ -294,15 +294,7 @@ footer {
     box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
 }
 
-/* Add a caption-like feel */
-.about-image::after {
-    content: "Ayush Chachan";
-    display: block;
-    margin-top: 12px;
-    font-size: 14px;
-    color: var(--text-muted);
-    text-align: center;
-}
+
 
 
 /* ================= RESPONSIVE ================= */
